@@ -63,7 +63,7 @@ Based on **Comprehensive Rule Evaluation** — checks ALL rules and returns ever
 
 ```bash
 # 1. Navigate to project folder
-cd Talenthub_anti
+cd Talenthub
 
 # 2. Install dependencies
 pip install flask
