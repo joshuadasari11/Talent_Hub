@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}{{ job.Role }} at {{ job.CompanyName }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb" style="background:none;padding:0;margin:0;">
+                <li class="breadcrumb-item"><a href="{{ url_for('jobs') }}" style="color:#64748b;text-decoration:none;">Jobs</a></li>
+                <li class="breadcrumb-item active" style="color:#94a3b8;">{{ job.Role }}</li>
+            </ol>
+        </nav>
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <h1 class="fw-bold mb-1" style="font-family:'Poppins',sans-serif;">{{ job.Role }}</h1>
+                <div style="color:#94a3b8;" class="d-flex flex-wrap gap-3">
+                    <span><i class="bi bi-building me-1"></i>{{ job.CompanyName }}</span>
+                    {% if job.Location %}<span><i class="bi bi-geo-alt me-1"></i>{{ job.Location }}</span>{% endif %}
+                    {% if job.Industry %}<span><i class="bi bi-tag me-1"></i>{{ job.Industry }}</span>{% endif %}
+                </div>
+            </div>
+            {% if job.Package %}
+            <div class="text-end">
+                <div class="fw-bold fs-4" style="color:#fbbf24;font-family:'Poppins',sans-serif;">{{ job.Package }}</div>
+                <div style="color:#64748b;font-size:0.82rem;">Annual CTC</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Main content -->
+        <div class="col-lg-8">
+            {% if job.Description %}
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3">About the Role</h5>
+                <p style="color:#94a3b8;line-height:1.8;">{{ job.Description }}</p>
+            </div>
+            {% endif %}
+
+            {% if job.CompanyDesc %}
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3">About {{ job.CompanyName }}</h5>
+                <p style="color:#94a3b8;line-height:1.8;">{{ job.CompanyDesc }}</p>
+                {% if job.Website %}
+                <a href="{{ job.Website }}" target="_blank" class="btn btn-sm" style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);color:#22d3ee;">
+                    <i class="bi bi-link-45deg me-1"></i>Visit Website
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Eligibility section for logged-in students -->
+            {% if session.get('role') == 'student' and student %}
+            <div class="card p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-clipboard-check me-2 gradient-text"></i>Your Eligibility Check</h5>
+                {% if is_eligible %}
+                <div class="p-3 rounded-3 mb-3" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);">
+                    <div class="fw-semibold mb-1" style="color:#34d399;"><i class="bi bi-check-circle-fill me-2"></i>You are eligible for this role!</div>
+                    <div style="color:#64748b;font-size:0.875rem;">All eligibility criteria are satisfied.</div>
+                </div>
+                {% else %}
+                <div class="p-3 rounded-3 mb-3" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);">
+                    <div class="fw-semibold mb-2" style="color:#f87171;"><i class="bi bi-x-circle-fill me-2"></i>Not Eligible</div>
+                    <ul class="mb-0 ps-3" style="color:#94a3b8;font-size:0.875rem;">
+                        {% for r in reasons %}<li>{{ r }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if already_applied %}
+                <div class="btn btn-sm w-100 py-2" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;cursor:default;">
+                    <i class="bi bi-check-circle me-2"></i>Application Submitted
+                </div>
+                {% elif is_eligible %}
+                <form method="POST" action="{{ url_for('apply_job', job_id=job.JobID) }}">
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="bi bi-send me-2"></i>Apply Now
+                    </button>
+                </form>
+                {% else %}
+                <button class="btn btn-secondary w-100 py-2" disabled style="background:rgba(100,116,139,0.1);border:1px solid var(--border);color:#64748b;">
+                    Not Eligible to Apply
+                </button>
+                {% endif %}
+            </div>
+            {% elif not session.get('user_id') %}
+            <div class="card p-4 text-center">
+                <i class="bi bi-lock fs-2 mb-2 d-block gradient-text"></i>
+                <h6 class="fw-semibold mb-2">Login to Apply</h6>
+                <p style="color:#64748b;font-size:0.875rem;" class="mb-3">Create a student account to check eligibility and apply for this role.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-primary">Register</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card p-4 mb-3">
+                <h6 class="fw-bold mb-3" style="color:#94a3b8;">Job Details</h6>
+                <div class="d-flex flex-column gap-3">
+                    {% if job.Location %}
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt-fill" style="color:#a5b4fc;width:20px;"></i>
+                        <div>
+                            <div style="color:#64748b;font-size:0.75rem;">Location</div>
+                            <div class="fw-semibold" style="font-size:0.9rem;">{{ job.Location }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if job.Package %}
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-currency-rupee" style="color:#fbbf24;width:20px;"></i>
+                        <div>
+                            <div style="color:#64748b;font-size:0.75rem;">Package</div>
+                            <div class="fw-semibold" style="font-size:0.9rem;">{{ job.Package }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if job.Deadline %}
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar-event-fill" style="color:#22d3ee;width:20px;"></i>
+                        <div>
+                            <div style="color:#64748b;font-size:0.75rem;">Deadline</div>
+                            <div class="fw-semibold" style="font-size:0.9rem;">{{ job.Deadline }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <h6 class="fw-bold mb-3" style="color:#94a3b8;"><i class="bi bi-funnel me-1"></i>Eligibility Criteria</h6>
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded-2" style="background:rgba(6,182,212,0.08);">
+                        <span style="color:#64748b;font-size:0.85rem;">Min. CGPA</span>
+                        <span class="fw-bold" style="color:#22d3ee;">{{ job.MinCGPA }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded-2" style="background:rgba(245,158,11,0.08);">
+                        <span style="color:#64748b;font-size:0.85rem;">Max Backlogs</span>
+                        <span class="fw-bold" style="color:#fbbf24;">{{ job.MaxActiveBacklogs }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded-2" style="background:rgba(99,102,241,0.08);">
+                        <span style="color:#64748b;font-size:0.85rem;">Allowed Branch</span>
+                        <span class="fw-bold" style="color:#a5b4fc;">{{ job.AllowedBranch }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('jobs') }}" style="color:#64748b;text-decoration:none;font-size:0.875rem;">
+            <i class="bi bi-arrow-left me-1"></i>Back to all jobs
+        </a>
+    </div>
+</div>
+{% endblock %}

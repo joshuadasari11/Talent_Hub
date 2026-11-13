@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Company Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="fw-bold mb-1" style="font-family:'Syne',sans-serif;">
+                    <i class="bi bi-building-fill me-2 gradient-text"></i>{{ company.CompanyName }}
+                </h1>
+                <p class="mb-0" style="color:var(--text-muted);">{{ company.Industry or 'Company Dashboard' }}</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('post_job') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Post a Job
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-briefcase-fill fs-3" style="color:var(--primary);"></i>
+                    <div>
+                        <div class="stat-number gradient-text">{{ jobs|length }}</div>
+                        <div style="color:var(--text-muted);font-size:0.85rem;">Jobs Posted</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-people-fill fs-3" style="color:var(--secondary);"></i>
+                    <div>
+                        <div class="stat-number gradient-text">{{ applications|length }}</div>
+                        <div style="color:var(--text-muted);font-size:0.85rem;">Total Applications</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-trophy-fill fs-3" style="color:var(--accent);"></i>
+                    <div>
+                        <div class="stat-number gradient-text">{{ applications|selectattr('Status','equalto','OFFERED')|list|length }}</div>
+                        <div style="color:var(--text-muted);font-size:0.85rem;">Offers Extended</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs — default to appsTab if redirected there -->
+    <ul class="nav nav-tabs mb-4" id="companyTabs">
+        <li class="nav-item">
+            <a class="nav-link" id="jobs-tab-btn" data-bs-toggle="tab" href="#jobsTab">
+                <i class="bi bi-briefcase me-1"></i>My Jobs
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="apps-tab-btn" data-bs-toggle="tab" href="#appsTab">
+                <i class="bi bi-people me-1"></i>Applications
+                {% if applications %}
+                <span class="badge rounded-pill ms-1" style="background:linear-gradient(135deg,var(--primary),var(--secondary));font-size:0.68rem;">{{ applications|length }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- ─── Jobs Tab ─── -->
+        <div class="tab-pane fade" id="jobsTab">
+            {% if jobs %}
+            <div class="row g-3">
+                {% for job in jobs %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card p-4 h-100">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div>
+                                <div class="fw-bold">{{ job.Role }}</div>
+                                <div style="color:var(--text-muted);font-size:0.82rem;"><i class="bi bi-geo-alt me-1"></i>{{ job.Location or 'Location TBD' }}</div>
+                            </div>
+                            <span class="status-badge align-self-start {% if job.IsActive %}status-offered{% else %}status-rejected{% endif %}">
+                                {{ 'Active' if job.IsActive else 'Closed' }}
+                            </span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-1 mb-3">
+                            {% if job.Package %}
+                            <span class="badge rounded-pill" style="background:rgba(255,179,71,0.15);color:var(--accent);font-size:0.72rem;">
+                                <i class="bi bi-currency-rupee"></i>{{ job.Package }}
+                            </span>
+                            {% endif %}
+                            <span class="badge rounded-pill" style="background:rgba(255,95,64,0.12);color:var(--primary);font-size:0.72rem;">
+                                CGPA {{ job.MinCGPA }}+
+                            </span>
+                            <span class="badge rounded-pill" style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:0.72rem;">
+                                {{ job.AllowedBranch }}
+                            </span>
+                        </div>
+                        {% set job_app_count = applications|selectattr('JobID','equalto',job.JobID)|list|length %}
+                        <div class="mt-auto d-flex align-items-center justify-content-between">
+                            <span style="color:var(--text-muted);font-size:0.82rem;">
+                                <i class="bi bi-people me-1"></i>{{ job_app_count }} applicant{{ 's' if job_app_count != 1 }}
+                            </span>
+                            {% if job_app_count > 0 %}
+                            <a href="#appsTab" class="btn btn-sm" style="background:rgba(255,95,64,0.1);border:1px solid rgba(255,95,64,0.3);color:var(--primary);font-size:0.78rem;" onclick="showAppsTab()">
+                                Review →
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5" style="color:var(--text-muted);">
+                <i class="bi bi-briefcase fs-1 mb-3 d-block"></i>
+                <p>No jobs posted yet.</p>
+                <a href="{{ url_for('post_job') }}" class="btn btn-primary">Post Your First Job</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ─── Applications Tab ─── -->
+        <div class="tab-pane fade" id="appsTab">
+
+            {% if applications %}
+            <!-- Filter bar -->
+            <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+                <input type="text" id="appSearch" class="form-control" style="max-width:240px;" placeholder="Search applicant or role…">
+                <div class="ms-auto d-flex gap-2 flex-wrap">
+                    {% for label, val, col in [
+                        ('All',         '',            '#a89ab5'),
+                        ('Pending',     'PENDING',     '#ffb347'),
+                        ('Shortlisted', 'SHORTLISTED', '#ff8c6e'),
+                        ('Offered',     'OFFERED',     '#00c896'),
+                        ('Rejected',    'REJECTED',    '#ff6b8a'),
+                    ] %}
+                    <button class="btn btn-sm filter-btn" data-filter="{{ val }}"
+                            style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:{{ col }};font-size:0.78rem;">
+                        {{ label }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Application cards (card layout — clearer than table) -->
+            <div class="row g-3" id="appCards">
+                {% for app in applications %}
+                <div class="col-md-6 app-row" data-status="{{ app.Status }}" data-name="{{ app.Name|lower }}" data-role="{{ app.Role|lower }}">
+                    <div class="card p-4 h-100" style="border-left: 3px solid
+                        {% if app.Status == 'OFFERED' %}var(--success)
+                        {% elif app.Status == 'SHORTLISTED' %}var(--primary)
+                        {% elif app.Status == 'REJECTED' %}var(--danger)
+                        {% else %}rgba(255,255,255,0.1){% endif %};">
+
+                        <!-- Header row -->
+                        <div class="d-flex align-items-start justify-content-between mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;color:#fff;flex-shrink:0;">
+                                    {{ app.Name[0] }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold" style="font-size:0.95rem;">{{ app.Name }}</div>
+                                    <div style="color:var(--text-muted);font-size:0.78rem;">
+                                        {{ app.Branch }} &nbsp;·&nbsp; CGPA <strong style="color:var(--success);">{{ app.CGPA }}</strong>
+                                        {% if app.ActiveBacklogs > 0 %}
+                                        &nbsp;·&nbsp; <span style="color:var(--accent);">{{ app.ActiveBacklogs }} backlog{{ 's' if app.ActiveBacklogs != 1 }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if app.Phone %}
+                                    <div style="color:var(--text-muted);font-size:0.75rem;"><i class="bi bi-telephone me-1"></i>{{ app.Phone }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="status-badge status-{{ app.Status.lower() }} flex-shrink-0">
+                                {% if app.Status == 'PENDING'     %}<i class="bi bi-hourglass-split me-1"></i>{% endif %}
+                                {% if app.Status == 'SHORTLISTED' %}<i class="bi bi-funnel-fill me-1"></i>{% endif %}
+                                {% if app.Status == 'OFFERED'     %}<i class="bi bi-trophy-fill me-1"></i>{% endif %}
+                                {% if app.Status == 'REJECTED'    %}<i class="bi bi-x-circle-fill me-1"></i>{% endif %}
+                                {{ app.Status }}
+                            </span>
+                        </div>
+
+                        <!-- Role + date -->
+                        <div class="mb-3 p-2 rounded-2" style="background:rgba(255,255,255,0.03);border:1px solid var(--border);">
+                            <div style="font-size:0.82rem;color:var(--text-muted);">Applied for</div>
+                            <div class="fw-semibold" style="font-size:0.9rem;">{{ app.Role }}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">
+                                <i class="bi bi-calendar3 me-1"></i>{{ app.ApplicationDate[:10] if app.ApplicationDate else '—' }}
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        {% if app.Status not in ('OFFERED', 'ACCEPTED', 'DECLINED') %}
+                        <div class="d-flex flex-wrap gap-2 mt-auto">
+
+                            {% if app.Status != 'SHORTLISTED' %}
+                            <form method="POST" action="{{ url_for('update_application', app_id=app.ApplicationID) }}" class="flex-fill">
+                                <input type="hidden" name="status" value="SHORTLISTED">
+                                <button type="submit" class="btn btn-sm w-100 fw-semibold"
+                                        style="background:rgba(255,95,64,0.12);border:1px solid rgba(255,95,64,0.35);color:var(--primary);"
+                                        onclick="return confirm('Shortlist {{ app.Name }}?')">
+                                    <i class="bi bi-funnel-fill me-1"></i>Shortlist
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if app.Status != 'REJECTED' %}
+                            <form method="POST" action="{{ url_for('update_application', app_id=app.ApplicationID) }}" class="flex-fill">
+                                <input type="hidden" name="status" value="REJECTED">
+                                <button type="submit" class="btn btn-sm w-100 fw-semibold"
+                                        style="background:rgba(255,59,92,0.1);border:1px solid rgba(255,59,92,0.35);color:#ff6b8a;"
+                                        onclick="return confirm('Reject application from {{ app.Name }}?')">
+                                    <i class="bi bi-x-circle me-1"></i>Reject
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if app.Status == 'SHORTLISTED' %}
+                            <form method="POST" action="{{ url_for('update_application', app_id=app.ApplicationID) }}" class="w-100">
+                                <input type="hidden" name="status" value="OFFERED">
+                                <button type="submit" class="btn btn-sm w-100 fw-semibold"
+                                        style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border:none;"
+                                        onclick="return confirm('Send job offer to {{ app.Name }}? This will mark them as PLACED.')">
+                                    <i class="bi bi-trophy-fill me-1"></i>Send Offer 🎉
+                                </button>
+                            </form>
+                            {% endif %}
+
+                        </div>
+                        {% elif app.Status == 'OFFERED' %}
+                        <div class="mt-auto p-2 rounded-2 text-center" style="background:rgba(0,200,150,0.08);border:1px solid rgba(0,200,150,0.25);">
+                            <i class="bi bi-check-circle-fill me-1" style="color:var(--success);"></i>
+                            <span style="color:var(--success);font-size:0.85rem;font-weight:600;">Offer Extended — Student Placed</span>
+                        </div>
+                        {% elif app.Status == 'REJECTED' %}
+                        <div class="mt-auto d-flex gap-2">
+                            <form method="POST" action="{{ url_for('update_application', app_id=app.ApplicationID) }}" class="flex-fill">
+                                <input type="hidden" name="status" value="PENDING">
+                                <button type="submit" class="btn btn-sm w-100"
+                                        style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-muted);">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Rejection
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="text-center py-5" style="color:var(--text-muted);">
+                <i class="bi bi-people fs-1 mb-3 d-block"></i>
+                <p>No applications received yet.</p>
+                <p style="font-size:0.875rem;">Applications will appear here once students apply to your job listings.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-open Applications tab if URL hash is #appsTab
+function showAppsTab() {
+    setTimeout(() => {
+        document.getElementById('apps-tab-btn').click();
+    }, 10);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#appsTab') {
+        document.getElementById('apps-tab-btn').click();
+    } else {
+        document.getElementById('jobs-tab-btn').click();
+    }
+
+    // Search filter
+    document.getElementById('appSearch').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('.app-row').forEach(row => {
+            const match = row.dataset.name.includes(q) || row.dataset.role.includes(q);
+            row.style.display = match ? '' : 'none';
+        });
+    });
+
+    // Status filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.style.opacity = '0.5');
+            this.style.opacity = '1';
+            const f = this.dataset.filter;
+            document.querySelectorAll('.app-row').forEach(row => {
+                row.style.display = (!f || row.dataset.status === f) ? '' : 'none';
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

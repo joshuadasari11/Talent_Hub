@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="fw-bold mb-1" style="font-family:'Poppins',sans-serif;">
+                    <i class="bi bi-mortarboard-fill me-2 gradient-text"></i>
+                    Hello, {{ student.Name.split()[0] }}!
+                </h1>
+                <p class="mb-0" style="color:#64748b;">
+                    {{ student.Branch }} &nbsp;•&nbsp;
+                    CGPA: <strong style="color:#a5b4fc;">{{ student.CGPA }}</strong> &nbsp;•&nbsp;
+                    Backlogs: <strong style="color:#fbbf24;">{{ student.ActiveBacklogs }}</strong>
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <span class="badge px-3 py-2 fs-6 {% if student.PlacementStatus == 'PLACED' %}status-offered{% else %}status-pending{% endif %} status-badge">
+                    <i class="bi bi-{% if student.PlacementStatus == 'PLACED' %}trophy-fill{% else %}hourglass-split{% endif %} me-1"></i>
+                    {{ student.PlacementStatus }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- Quick Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-send-fill fs-3" style="color:#a5b4fc;"></i>
+                    <div>
+                        <div class="stat-number gradient-text">{{ applications|length }}</div>
+                        <div style="color:#64748b;font-size:0.85rem;">Applications</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-check2-circle fs-3" style="color:#34d399;"></i>
+                    <div>
+                        <div class="stat-number gradient-text">{{ applications|selectattr('Status','in',['SHORTLISTED','OFFERED','ACCEPTED'])|list|length }}</div>
+                        <div style="color:#64748b;font-size:0.85rem;">Shortlisted</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-briefcase-fill fs-3" style="color:#fbbf24;"></i>
+                    <div>
+                        <div class="stat-number gradient-text">{{ jobs|length }}</div>
+                        <div style="color:#64748b;font-size:0.85rem;">Open Jobs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="dashTabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#jobsTab">
+                <i class="bi bi-briefcase me-1"></i>Browse Jobs
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#appsTab">
+                <i class="bi bi-send me-1"></i>My Applications
+                {% if applications %}
+                <span class="badge rounded-pill ms-1" style="background:var(--primary);font-size:0.7rem;">{{ applications|length }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Jobs Tab -->
+        <div class="tab-pane fade show active" id="jobsTab">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <input type="text" id="jobSearch" class="form-control" style="max-width:280px;" placeholder="Search jobs...">
+            </div>
+            <div class="row g-3" id="jobsGrid">
+                {% for job in jobs %}
+                {% set eligible, reasons = check_eligibility(student, job) %}
+                <div class="col-lg-4 col-md-6 job-card-wrapper">
+                    <div class="card h-100 p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div class="fw-bold mb-1">{{ job.Role }}</div>
+                                <div style="color:#94a3b8;font-size:0.85rem;">
+                                    <i class="bi bi-building me-1"></i>{{ job.CompanyName }}
+                                </div>
+                            </div>
+                            {% if eligible %}
+                            <span class="eligible-pill px-2 py-1 rounded-pill" style="font-size:0.7rem;font-weight:600;">✓ Eligible</span>
+                            {% else %}
+                            <span class="ineligible-pill px-2 py-1 rounded-pill" style="font-size:0.7rem;font-weight:600;">✗ Ineligible</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-1 mb-3">
+                            {% if job.Location %}
+                            <span class="badge rounded-pill" style="background:rgba(99,102,241,0.15);color:#a5b4fc;font-size:0.72rem;">
+                                <i class="bi bi-geo-alt me-1"></i>{{ job.Location }}
+                            </span>
+                            {% endif %}
+                            {% if job.Package %}
+                            <span class="badge rounded-pill" style="background:rgba(245,158,11,0.15);color:#fbbf24;font-size:0.72rem;">
+                                <i class="bi bi-currency-rupee"></i>{{ job.Package }}
+                            </span>
+                            {% endif %}
+                            <span class="badge rounded-pill" style="background:rgba(6,182,212,0.15);color:#22d3ee;font-size:0.72rem;">
+                                CGPA {{ job.MinCGPA }}+
+                            </span>
+                            <span class="badge rounded-pill" style="background:rgba(99,102,241,0.1);color:#94a3b8;font-size:0.72rem;">
+                                {{ job.AllowedBranch }}
+                            </span>
+                        </div>
+
+                        {% if not eligible and reasons %}
+                        <div class="mb-3 p-2 rounded-2" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);">
+                            <div style="font-size:0.75rem;color:#f87171;">
+                                {% for r in reasons %}<div><i class="bi bi-x-circle me-1"></i>{{ r }}</div>{% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-auto d-flex gap-2">
+                            {% set already_applied = namespace(val=false) %}
+                            {% for app in applications %}
+                                {% if app.JobID == job.JobID %}{% set already_applied.val = true %}{% endif %}
+                            {% endfor %}
+
+                            {% if already_applied.val %}
+                            <span class="btn btn-sm flex-fill" style="background:rgba(16,185,129,0.1);color:#34d399;border:1px solid rgba(16,185,129,0.3);cursor:default;">
+                                <i class="bi bi-check me-1"></i>Applied
+                            </span>
+                            {% elif eligible %}
+                            <form method="POST" action="{{ url_for('apply_job', job_id=job.JobID) }}" class="flex-fill">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-send me-1"></i>Apply Now
+                                </button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-sm flex-fill" style="background:rgba(100,116,139,0.1);color:#64748b;border:1px solid var(--border);cursor:not-allowed;" disabled>
+                                Not Eligible
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('job_detail', job_id=job.JobID) }}" class="btn btn-sm" style="background:var(--glass);border:1px solid var(--border);color:#94a3b8;">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-5" style="color:#64748b;">
+                    <i class="bi bi-briefcase fs-1 mb-3 d-block"></i>No active jobs at the moment.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Applications Tab -->
+        <div class="tab-pane fade" id="appsTab">
+            {% if applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Role</th>
+                            <th>Package</th>
+                            <th>Applied On</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ app.CompanyName }}</div>
+                            </td>
+                            <td>{{ app.Role }}</td>
+                            <td>
+                                <span style="color:#fbbf24;">{{ app.Package or '—' }}</span>
+                            </td>
+                            <td style="color:#64748b;font-size:0.85rem;">
+                                {{ app.ApplicationDate[:10] if app.ApplicationDate else '—' }}
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ app.Status.lower() }}">
+                                    {{ app.Status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5" style="color:#64748b;">
+                <i class="bi bi-send fs-1 mb-3 d-block"></i>
+                <p>You haven't applied to any jobs yet.</p>
+                <a href="#jobsTab" class="btn btn-primary" data-bs-toggle="tab">Browse Jobs</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('jobSearch').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    document.querySelectorAll('.job-card-wrapper').forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(val) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

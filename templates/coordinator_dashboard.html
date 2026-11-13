@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Coordinator Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1 class="fw-bold mb-1" style="font-family:'Poppins',sans-serif;">
+            <i class="bi bi-shield-check-fill me-2 gradient-text"></i>Coordinator Dashboard
+        </h1>
+        <p class="mb-0" style="color:#64748b;">Full platform oversight and administration</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        {% for label, val, icon, color in [
+            ('Total Students',  stats.total_students,  'bi-mortarboard-fill', '#a5b4fc'),
+            ('Placed Students', stats.placed_students, 'bi-trophy-fill',      '#34d399'),
+            ('Companies',       stats.total_companies, 'bi-building-fill',    '#22d3ee'),
+            ('Active Jobs',     stats.active_jobs,     'bi-briefcase-fill',   '#fbbf24'),
+            ('Applications',    stats.total_apps,      'bi-send-fill',        '#f87171'),
+        ] %}
+        <div class="col">
+            <div class="stat-card">
+                <i class="bi {{ icon }} fs-4 mb-2 d-block" style="color:{{ color }};"></i>
+                <div class="stat-number gradient-text" style="font-size:2rem;">{{ val }}</div>
+                <div style="color:#64748b;font-size:0.82rem;">{{ label }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#studentsTab"><i class="bi bi-mortarboard me-1"></i>Students</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#companiesTab"><i class="bi bi-building me-1"></i>Companies</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#jobsTab"><i class="bi bi-briefcase me-1"></i>Jobs</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#appsTab"><i class="bi bi-people me-1"></i>Applications</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#auditTab"><i class="bi bi-clock-history me-1"></i>Audit Log</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Students -->
+        <div class="tab-pane fade show active" id="studentsTab">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr>
+                        <th>#</th><th>Name</th><th>Branch</th><th>CGPA</th><th>Backlogs</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td style="color:#64748b;">{{ loop.index }}</td>
+                        <td><div class="d-flex align-items-center gap-2">
+                            <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">{{ s.Name[0] }}</div>
+                            <span class="fw-semibold" style="font-size:0.9rem;">{{ s.Name }}</span>
+                        </div></td>
+                        <td><span class="badge rounded-pill" style="background:rgba(99,102,241,0.15);color:#a5b4fc;">{{ s.Branch }}</span></td>
+                        <td><span class="fw-semibold" style="color:{% if s.CGPA >= 8 %}#34d399{% elif s.CGPA >= 6.5 %}#fbbf24{% else %}#f87171{% endif %};">{{ s.CGPA }}</span></td>
+                        <td>{{ s.ActiveBacklogs }}</td>
+                        <td><span class="status-badge {% if s.PlacementStatus == 'PLACED' %}status-offered{% else %}status-pending{% endif %}">{{ s.PlacementStatus }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-4" style="color:#64748b;">No students found.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Companies -->
+        <div class="tab-pane fade" id="companiesTab">
+            <div class="row g-3">
+            {% for c in companies %}
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.1));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;color:#22d3ee;flex-shrink:0;">
+                            {{ c.CompanyName[0] }}
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ c.CompanyName }}</div>
+                            <div style="color:#64748b;font-size:0.8rem;">{{ c.Industry or '—' }}</div>
+                        </div>
+                    </div>
+                    {% if c.Description %}
+                    <p style="color:#64748b;font-size:0.82rem;margin-bottom:0.5rem;">{{ c.Description[:80] }}{% if c.Description|length > 80 %}...{% endif %}</p>
+                    {% endif %}
+                    {% if c.Website %}
+                    <a href="{{ c.Website }}" target="_blank" style="color:#22d3ee;font-size:0.8rem;text-decoration:none;">
+                        <i class="bi bi-link-45deg me-1"></i>{{ c.Website }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-4" style="color:#64748b;">No companies found.</div>
+            {% endfor %}
+            </div>
+        </div>
+
+        <!-- Jobs -->
+        <div class="tab-pane fade" id="jobsTab">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr>
+                        <th>Role</th><th>Company</th><th>Package</th><th>Min CGPA</th><th>Branch</th><th>Status</th><th>Action</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for j in jobs %}
+                    <tr>
+                        <td><span class="fw-semibold">{{ j.Role }}</span></td>
+                        <td style="color:#94a3b8;">{{ j.CompanyName }}</td>
+                        <td><span style="color:#fbbf24;">{{ j.Package or '—' }}</span></td>
+                        <td><span style="color:#22d3ee;">{{ j.MinCGPA }}</span></td>
+                        <td>{{ j.AllowedBranch }}</td>
+                        <td><span class="status-badge {% if j.IsActive %}status-offered{% else %}status-rejected{% endif %}">{{ 'Active' if j.IsActive else 'Closed' }}</span></td>
+                        <td>
+                            <form method="POST" action="{{ url_for('toggle_job', job_id=j.JobID) }}">
+                                <button type="submit" class="btn btn-sm" style="background:var(--glass);border:1px solid var(--border);color:#94a3b8;font-size:0.78rem;">
+                                    {{ 'Deactivate' if j.IsActive else 'Activate' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center py-4" style="color:#64748b;">No jobs found.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Applications -->
+        <div class="tab-pane fade" id="appsTab">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr>
+                        <th>Student</th><th>Company</th><th>Role</th><th>CGPA / Branch</th><th>Applied On</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for a in applications %}
+                    <tr>
+                        <td><span class="fw-semibold" style="font-size:0.9rem;">{{ a.StudentName }}</span></td>
+                        <td style="color:#94a3b8;font-size:0.875rem;">{{ a.CompanyName }}</td>
+                        <td style="font-size:0.875rem;">{{ a.Role }}</td>
+                        <td><span style="color:#34d399;">{{ a.CGPA }}</span> / <span style="color:#a5b4fc;">{{ a.Branch }}</span></td>
+                        <td style="color:#64748b;font-size:0.82rem;">{{ a.ApplicationDate[:10] if a.ApplicationDate else '—' }}</td>
+                        <td><span class="status-badge status-{{ a.Status.lower() }}">{{ a.Status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-4" style="color:#64748b;">No applications yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Audit Log -->
+        <div class="tab-pane fade" id="auditTab">
+            <div class="card p-3 mb-3" style="background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.2);">
+                <small style="color:#fbbf24;"><i class="bi bi-info-circle me-1"></i>Append-only audit trail for placement state changes — provides non-repudiable dispute resolution history.</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr>
+                        <th>Time</th><th>Entity</th><th>Action</th><th>Old Value</th><th>New Value</th><th>Changed By</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for log in audit_log %}
+                    <tr>
+                        <td style="color:#64748b;font-size:0.78rem;white-space:nowrap;">{{ log.ChangedAt[:19] if log.ChangedAt else '—' }}</td>
+                        <td><span class="badge rounded-pill" style="background:rgba(99,102,241,0.15);color:#a5b4fc;font-size:0.72rem;">{{ log.EntityType }} #{{ log.EntityID }}</span></td>
+                        <td><span class="fw-semibold" style="font-size:0.85rem;color:#22d3ee;">{{ log.Action }}</span></td>
+                        <td style="color:#f87171;font-size:0.82rem;">{{ log.OldValue or '—' }}</td>
+                        <td style="color:#34d399;font-size:0.82rem;">{{ log.NewValue or '—' }}</td>
+                        <td style="color:#64748b;font-size:0.82rem;">{{ log.Email or 'System' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-4" style="color:#64748b;">No audit events yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
